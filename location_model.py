@@ -41,10 +41,16 @@ time_data = {
     },
     'full' : {
         'datetime' : {
-            'utc' : ''
+            'utc' : '',
+            'local' : ''
         },
         'unix' : {
-            'utc' : ''
+            'utc' : '',
+            'local' : ''
         }
+    },
+    'epoc' : {
+        'utc' : '',
+        'local' : ''
     }
 }

@@ -1,7 +1,9 @@
 from location_model import location_information, time_data
+from env.example import env
 
 import time
 from datetime import datetime
+from dateutil import tz
 
 
 def hex_to_binary(hex_string):
@@ -77,11 +79,25 @@ def get_time_data(bits):
         int(time_data['minute']['utc']),
         int(time_data['second']['utc'])
     )
-    
-    # Save to dictionary
-    time_data['full']['datetime']['utc'] = datetime_utc
-    # Unix
-    time_data['full']['unix']['utc'] = datetime_utc.timestamp()
+
+    # Save UTC to dictionary
+    time_data['full']['datetime']['utc'] = datetime_utc.strftime("%d/%m/%Y, %H:%M:%S")
+    # UTC epoc
+    time_data['epoc']['utc'] = datetime_utc.timestamp()
+    # Local time epoc (offset x 3600 seconds)
+    time_data['epoc']['local'] = time_data['epoc']['utc'] + (env['timezone_offset'] * 3600)
+    # Local time full
+    datetime_local = datetime.fromtimestamp(time_data['epoc']['local'])
+    # Save local time to dictionary
+    time_data['full']['datetime']['local'] = datetime_local.strftime("%d/%m/%Y, %H:%M:%S")
+    # Save time components
+    time_data['year']['local'] = datetime_local.strftime("%Y")
+    time_data['month']['local'] = datetime_local.strftime("%m")
+    time_data['day']['local'] = datetime_local.strftime("%d")
+    time_data['hour']['local'] = datetime_local.strftime("%H")
+    time_data['minute']['local'] = datetime_local.strftime("%M")
+    time_data['second']['local'] = datetime_local.strftime("%S")
+
 
     return(time_data)    
 
