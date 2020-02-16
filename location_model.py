@@ -18,36 +18,36 @@ location_information = {
 
 time_data = {
     'year' : {
-        'utc' : ''
+        'utc' : '',
+        'local' : ''
     },
     'month' : {
-        'utc' : ''
+        'utc' : '',
+        'local' : ''
     },
     'day' : {
         'bits' : '',
-        'utc' : ''
+        'utc' : '',
+        'local' : ''
     },
     'hour' : {
         'bits' : '',
-        'utc' : ''
+        'utc' : '',
+        'local' : ''
     },
     'minute' : {
         'bits' : '',
-        'utc' : ''
+        'utc' : '',
+        'local' : ''
     },
     'second' : {
         'bits' : '',
-        'utc' : ''
+        'utc' : '',
+        'local' : ''
     },
     'full' : {
-        'datetime' : {
-            'utc' : '',
-            'local' : ''
-        },
-        'unix' : {
-            'utc' : '',
-            'local' : ''
-        }
+        'utc' : '',
+        'local' : ''
     },
     'epoc' : {
         'utc' : '',

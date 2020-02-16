@@ -81,7 +81,7 @@ def get_time_data(bits):
     )
 
     # Save UTC to dictionary
-    time_data['full']['datetime']['utc'] = datetime_utc.strftime("%d/%m/%Y, %H:%M:%S")
+    time_data['full']['utc'] = datetime_utc.strftime("%d/%m/%Y, %H:%M:%S")
     # UTC epoc
     time_data['epoc']['utc'] = datetime_utc.timestamp()
     # Local time epoc (offset x 3600 seconds)
@@ -89,7 +89,7 @@ def get_time_data(bits):
     # Local time full
     datetime_local = datetime.fromtimestamp(time_data['epoc']['local'])
     # Save local time to dictionary
-    time_data['full']['datetime']['local'] = datetime_local.strftime("%d/%m/%Y, %H:%M:%S")
+    time_data['full']['local'] = datetime_local.strftime("%d/%m/%Y, %H:%M:%S")
     # Save time components
     time_data['year']['local'] = datetime_local.strftime("%Y")
     time_data['month']['local'] = datetime_local.strftime("%m")
