@@ -1,4 +1,4 @@
-from location_model import location_information, time_data
+from models import master, pdu_type, pdu_type_extension, time_type, pdu_data, time_data
 from env.example import env
 
 import time
@@ -6,132 +6,106 @@ from datetime import datetime
 from dateutil import tz
 
 
-def hex_to_binary(hex_string):
-    '''Convert hex string to binary string
-    '''
-    # Convert using .format
-    binary_string = "{0:08b}".format(int(hex_string, 16))
-    # Add a 0 to the start (test temp)
-    binary_string = '0'+binary_string
-    return(binary_string)
-
-
-def get_pdu_type(bits):
-    '''Takes two binary bits as a string, returns PDU type,
-    short location report (short) or long location report (long)
-    '''
-    str(bits)
-    if bits == '00':
-        return('short')
-    elif bits == '01':
-        return('long')
-    else:
-        raise ValueError(f'"Unknown binary input, must be either 00 or 01"')
-
-
-def get_time_type(bits):
-    '''Takes two binary bits as a string, returns time type,
-    None, elapsed or position
-    '''
-    str(bits)
-    if bits == '00':
-        return('none')
-    elif bits == '01':
-        return('time_elapsed')
-    elif bits == '10':
-        return('time_of_position')
-    else:
-        raise ValueError(f'"Unknown binary input, must be either 00, 01 or 10"')
-
 
 def get_time_data(bits):
     '''Takes binary string, returns time information dictionary
     '''
 
     # Convert day (4 bits)
-    time_data['day']['bits'] = bits[0:5]
-    time_data['day']['utc'] = int(bits[0:5], 2)
+    time_data['bits']['day'] = bits[0:5]
+    time_data['utc']['day'] = int(bits[0:5], 2)
 
     # Convert hour (4 bits)
-    time_data['hour']['bits'] = bits[5:10]
-    time_data['hour']['utc'] = int(bits[5:10], 2)
+    time_data['bits']['hour'] = bits[5:10]
+    time_data['utc']['hour'] = int(bits[5:10], 2)
 
     # Convert minute (6 bits)
-    time_data['minute']['bits'] = bits[10:16]
-    time_data['minute']['utc'] = int(bits[10:16], 2)
+    time_data['bits']['minute'] = bits[10:16]
+    time_data['utc']['minute'] = int(bits[10:16], 2)
 
     # Convert second (6 bits)
-    time_data['second']['bits'] = bits[16:22]
-    time_data['second']['utc'] = int(bits[16:22], 2)
+    time_data['bits']['second'] = bits[16:22]
+    time_data['utc']['second'] = int(bits[16:22], 2)
 
     # Get current year
-    time_data['year']['utc'] = datetime.utcnow().strftime('%Y')
+    time_data['utc']['year'] = datetime.utcnow().strftime('%Y')
 
     # Get current month
-    time_data['month']['utc'] = datetime.utcnow().strftime('%m')
+    time_data['utc']['month'] = datetime.utcnow().strftime('%m')
 
     # Create full datetime object
     datetime_utc = datetime(
-        int(time_data['year']['utc']),
-        int(time_data['month']['utc']),
-        int(time_data['day']['utc']),
-        int(time_data['hour']['utc']),
-        int(time_data['minute']['utc']),
-        int(time_data['second']['utc'])
+        int(time_data['utc']['year']),
+        int(time_data['utc']['month']),
+        int(time_data['utc']['day']),
+        int(time_data['utc']['hour']),
+        int(time_data['utc']['minute']),
+        int(time_data['utc']['second'])
     )
 
     # Save UTC to dictionary
-    time_data['full']['utc'] = datetime_utc.strftime("%d/%m/%Y, %H:%M:%S")
+    time_data['utc']['full'] = datetime_utc.strftime("%d/%m/%Y %H:%M:%S")
     # UTC epoc
-    time_data['epoc']['utc'] = datetime_utc.timestamp()
+    time_data['utc']['epoc'] = datetime_utc.timestamp()
     # Local time epoc (offset x 3600 seconds)
-    time_data['epoc']['local'] = time_data['epoc']['utc'] + (env['timezone_offset'] * 3600)
+    time_data['local']['epoc'] = time_data['utc']['epoc'] + (env['timezone_offset'] * 3600)
     # Local time full
-    datetime_local = datetime.fromtimestamp(time_data['epoc']['local'])
+    datetime_local = datetime.fromtimestamp(time_data['local']['epoc'])
     # Save local time to dictionary
-    time_data['full']['local'] = datetime_local.strftime("%d/%m/%Y, %H:%M:%S")
+    time_data['local']['full'] = datetime_local.strftime("%d/%m/%Y %H:%M:%S")
     # Save time components
-    time_data['year']['local'] = datetime_local.strftime("%Y")
-    time_data['month']['local'] = datetime_local.strftime("%m")
-    time_data['day']['local'] = datetime_local.strftime("%d")
-    time_data['hour']['local'] = datetime_local.strftime("%H")
-    time_data['minute']['local'] = datetime_local.strftime("%M")
-    time_data['second']['local'] = datetime_local.strftime("%S")
+    time_data['local']['year'] = datetime_local.strftime("%Y")
+    time_data['local']['month'] = datetime_local.strftime("%m")
+    time_data['local']['day'] = datetime_local.strftime("%d")
+    time_data['local']['hour'] = datetime_local.strftime("%H")
+    time_data['local']['minute'] = datetime_local.strftime("%M")
+    time_data['local']['second'] = datetime_local.strftime("%S")
 
 
     return(time_data)    
 
 
-def get_long_location(bits):
-    pass
-
 
 def sds(hex_string):
     ''' "Main" function, takes a hex string, returns a dictionary with location information.
     '''
-    # Convert to binary
-    location_information['binary_string'] = hex_to_binary(hex_string)
 
-    # Get location report type
-    location_information['pdu_type']['bits'] = location_information['binary_string'][:2]
-    location_information['pdu_type']['type'] = get_pdu_type(location_information['pdu_type']['bits'])
+    master['hex_string'] = hex_string
 
-    # Get time type
-    location_information['time']['type']['bits'] = location_information['binary_string'][6:8]
-    location_information['time']['type']['type'] = get_time_type(location_information['time']['type']['bits'])
+    # Convert to binary (add a 0 to the start)
+    binary_string = '0'+"{0:08b}".format(int(hex_string, 16))
+    master['binary_string'] = binary_string
+
+    # Look up PDU type in pdu_type dictionary
+    # Bits 1-2 (2 bits)
+    pdu_data['pdu_type']['bits'] = binary_string[0:2]
+    pdu_data['pdu_type']['type'] = pdu_type[binary_string[0:2]]
+
+    # If PDU Type == "Location protocol PDU with extension"
+    # Look up PDU type extension in pdu_type_extension dictionary
+    # Bits 3-6 (4 bits)
+    if pdu_data['pdu_type']['type'] == 'Location protocol PDU with extension':
+        pdu_data['pdu_type_extension']['bits'] = binary_string[2:6]
+        pdu_data['pdu_type_extension']['type'] = pdu_type_extension[binary_string[2:6]]
+    else:
+        raise ValueError("Only 'Location protocol PDU with extension' (01) is currently supported.")
+
+    # If PDU Extension Type == "Long location report"
+    # Look up time type in time_type dictionary
+    # Bits 7-8 (2 bits)
+    if pdu_data['pdu_type_extension']['type'] == 'Long location report':
+        time_data['type']['bits'] = binary_string[6:8]
+        time_data['type']['type'] = time_type[binary_string[6:8]]
+    else:
+        raise ValueError("Only 'Long location report' (0011) is currently supported.")
 
     # Process time data
-    if location_information['time']['type']['type'] == "time_of_position":
-        time_data = get_time_data(location_information['binary_string'][8:30])
-
+    # Bits 9-31 (22 bits)
+    if time_data['type']['type'] == "Time of position":
+        get_time_data(binary_string[8:30])
         print(time_data)
-
-    '''
-    # Get location
-    if location_information['pdu_type']['type'] == 'long':
-        # pdu type
-        get_long_location(location_information['binary_string'][])
-    '''
+    else:
+        raise ValueError("Only 'Time of position' (10) is currently supported.")
 
     
 
