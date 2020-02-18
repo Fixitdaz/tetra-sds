@@ -1,4 +1,5 @@
-from models import master, pdu_type, pdu_type_extension, time_type, pdu_data, time_data
+from models import master, pdu_type, pdu_type_extension, time_type, pdu_data, time_data, location_shape, \
+    location_data
 from env.example import env
 
 import time
@@ -61,9 +62,48 @@ def get_time_data(bits):
     time_data['local']['minute'] = datetime_local.strftime("%M")
     time_data['local']['second'] = datetime_local.strftime("%S")
 
+    return(time_data)
 
-    return(time_data)    
 
+def twos_comp(val, bits):
+    """compute the 2's complement of int value val"""
+
+    if (val & (1 << (bits - 1))) != 0: # if sign bit is set e.g., 8bit: 128-255
+        val = val - (1 << bits)        # compute negative value
+    return val    
+
+def get_longitude(bits):
+
+    out = twos_comp(int(bits,2), len(bits))
+    longitude = out*(360/(2**25))
+
+    location_data['longitude']['decimal_degrees'] = longitude
+
+    if longitude < 0:
+        location_data['longitude']['meridian'] = 'W'
+    else:
+        location_data['longitude']['meridian'] = 'E'
+
+    return(location_data)
+
+
+def get_latitude(bits):
+    pass
+
+
+
+
+def get_location_data(bits):
+    ''' Takes location data binary string and returns location data dictionary
+    '''
+
+    location_data['longitude']['bits'] = bits[0:25]
+    location_data['latitude']['bits'] = bits[25:49]
+    location_data['uncertainty']['bits'] = bits[49:55]
+    location_data['altitude']['bits'] = bits[49:55]
+
+    get_longitude(bits[0:25])
+    get_latitude(bits[25:49])
 
 
 def sds(hex_string):
@@ -103,9 +143,19 @@ def sds(hex_string):
     # Bits 9-31 (22 bits)
     if time_data['type']['type'] == "Time of position":
         get_time_data(binary_string[8:30])
-        print(time_data)
     else:
         raise ValueError("Only 'Time of position' (10) is currently supported.")
+
+    # Lookup location shape
+    location_data['shape']['bits'] = binary_string[30:34]
+    location_data['shape']['type'] = location_shape[binary_string[30:34]]
+
+    # Process location data
+    # Bits [33:100] (67 bits)
+    if location_data['shape']['type'] == 'circle with altitude':
+        get_location_data(binary_string[34:101])
+    else:
+        raise ValueError("Only 'circle with altitude' (0101) is currently supported")
 
     
 

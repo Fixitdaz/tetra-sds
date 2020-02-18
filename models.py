@@ -38,6 +38,25 @@ time_type = {
     '11' : 'Reserved' 
 }
 
+location_shape = {
+    '0000' : 'No shape',
+    '0001' : 'point',
+    '0010' : 'circle',
+    '0011' : 'ellipse',
+    '0100' : 'point with altitude',
+    '0101' : 'circle with altitude',
+    '0110' : 'ellipse with altitude',
+    '0111' : 'circle with altitude and altitude uncertainty',
+    '1000' : 'ellipse with altitude and altitude uncertainty',
+    '1001' : 'arc',
+    '1010' : 'point and position error',
+    '1011' : 'Reserved',
+    '1100' : 'Reserved',
+    '1101' : 'Reserved',
+    '1110' : 'Reserved',
+    '1111' : 'Location shape extension'
+}
+
 pdu_data = {
     'pdu_type' : {
         'type' : '',
@@ -80,4 +99,24 @@ time_data = {
         'minute' : '',
         'second' : ''       
     }
+}
+
+location_data = {
+    'shape' : {
+        'bits' : '',
+        'type' : ''
+    },
+    'longitude' : {
+        'bits' : ''
+    },
+    'latitude' : {
+        'bits' : ''
+    },
+    'uncertainty' : {
+        'bits' : ''
+    },
+    'altitude' : {
+        'bits' : ''
+    }
+
 }
