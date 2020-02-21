@@ -1,5 +1,5 @@
 from models import master, pdu_type, pdu_type_extension, time_type, pdu_data, time_data, location_shape, \
-    location_data
+    location_data, velocity_data, velocity_type
 from env.example import env
 
 import time
@@ -65,17 +65,22 @@ def get_time_data(bits):
     return(time_data)
 
 
-def twos_comp(val, bits):
-    """compute the 2's complement of int value val"""
+def twos_comp(bits):
+    """compute the 2's complement of int value val
+    Stolen from a stack overflow like everything else
+    """
+    val = int(bits,2)
+    bits = len(bits)
 
     if (val & (1 << (bits - 1))) != 0: # if sign bit is set e.g., 8bit: 128-255
         val = val - (1 << bits)        # compute negative value
-    return val    
+    return(val)   
 
 def get_longitude(bits):
+    ''' Converts bit string to longitude in decimal degrees
+    '''
 
-    out = twos_comp(int(bits,2), len(bits))
-    longitude = out*(360/(2**25))
+    longitude = twos_comp(bits)*(360/(2**25))
 
     location_data['longitude']['decimal_degrees'] = longitude
 
@@ -88,9 +93,62 @@ def get_longitude(bits):
 
 
 def get_latitude(bits):
-    pass
+    ''' Converts bit string to latitude in decimal degrees
+    '''
+
+    latitude = twos_comp(bits)*(180/(2**24))
+
+    location_data['latitude']['decimal_degrees'] = latitude
+
+    if latitude < 0:
+        location_data['latitude']['meridian'] = 'S'
+    else:
+        location_data['latitude']['meridian'] = 'N'
 
 
+def get_horizontal_accuracy(bits):
+    ''' Converts horizontal position accuracy bits (6) to actual value in meters
+    '''
+
+    # Convert binary to integer
+    value = int(bits, 2)
+
+    # Messed up equation according to the standard (standard doesn't conform to order of operation)
+    value = (2 * ((1 + 0.2) ** (value+5))) + -4
+    value = round(value)
+
+    location_data['uncertainty'] = value
+
+
+def get_altitude(bits):
+    ''' Converts altitude bits (12) to actual value in meters
+    This is the GPS reported altitude, doesn't account for latitude, longitude
+    '''
+
+    location_data['altitude']['type']['bits'] = bits[0]
+
+    if bits[0] == '0':
+        location_data['altitude']['type']['type'] = 'Altitude above WGS84 ellipsoid'
+    elif bits[0] == '1':
+        location_data['altitude']['type']['type'] = 'User defined altitude reference'
+
+    # Convert remaining 11 bits to integer
+    value = int(bits[1:], 2)
+
+    if value == 0:
+        # 0 is reserverd, leave blank
+        pass
+    elif 1 <= value <= 1201:
+        value = -201 + value
+    elif 1202 <= value <= 1926:
+        value = 1000 + ((value - 1201) * 2)
+    elif 1927 <= value <= 2047:
+        value = 2450 + ((value - 1926) * 75)
+    else:
+        # Make it max
+        value = 11525
+
+    location_data['altitude']['meters'] = value
 
 
 def get_location_data(bits):
@@ -100,10 +158,34 @@ def get_location_data(bits):
     location_data['longitude']['bits'] = bits[0:25]
     location_data['latitude']['bits'] = bits[25:49]
     location_data['uncertainty']['bits'] = bits[49:55]
-    location_data['altitude']['bits'] = bits[49:55]
+    location_data['altitude']['bits'] = bits[55:67]
 
     get_longitude(bits[0:25])
     get_latitude(bits[25:49])
+    get_horizontal_accuracy(bits[49:55])
+    get_altitude(bits[55:67])
+
+    return(location_data)
+
+def get_horizontal_velocity(bits):
+    ''' Calculates horizontal velocity from binary string
+    '''
+    
+
+
+
+def get_velocity_data(bits):
+    '''Converts velocity data string to actual velocity information
+    '''
+
+
+
+    horizontal = int(bits[0:8], 2)
+    vertical = int(bits[8:16], 2)
+
+    # v = C × (1 + x)^(K-A) + B
+    horizontal = 16 * ((1 + 0.038) ** (horizontal - 13)) + 0
+
 
 
 def sds(hex_string):
@@ -112,7 +194,7 @@ def sds(hex_string):
 
     master['hex_string'] = hex_string
 
-    # Convert to binary (add a 0 to the start)
+    # Convert hex to binary (add a 0 to the start)
     binary_string = '0'+"{0:08b}".format(int(hex_string, 16))
     master['binary_string'] = binary_string
 
@@ -142,7 +224,7 @@ def sds(hex_string):
     # Process time data
     # Bits 9-31 (22 bits)
     if time_data['type']['type'] == "Time of position":
-        get_time_data(binary_string[8:30])
+        master['time'] = get_time_data(binary_string[8:30])
     else:
         raise ValueError("Only 'Time of position' (10) is currently supported.")
 
@@ -151,15 +233,27 @@ def sds(hex_string):
     location_data['shape']['type'] = location_shape[binary_string[30:34]]
 
     # Process location data
-    # Bits [33:100] (67 bits)
+    # Bits [34:101] (67 bits)
     if location_data['shape']['type'] == 'circle with altitude':
-        get_location_data(binary_string[34:101])
+        master['location'] = get_location_data(binary_string[34:101])
     else:
         raise ValueError("Only 'circle with altitude' (0101) is currently supported")
+
+    # Lookup velocity type
+    velocity_data['type']['bits'] = binary_string[101:104]
+    velocity_data['type']['type'] = velocity_type[binary_string[101:104]]
+
+    if velocity_data['type']['type'] = 'Horizontal velocity and vertical velocity':
+        master['velocity'] = get_velocity_data(binary_string[104:119])
+
+
 
     
 
 if __name__ == '__main__':
+
+    # Locations list to append positions
+    locations = []
 
     #Import example hex string from file
     with open('example_hex.txt', 'r') as f:
@@ -167,5 +261,8 @@ if __name__ == '__main__':
             hex_string = line.strip()
             print(f'Decoding {hex_string}')
             sds(hex_string)
+
+
+        print(master)
 
     f.close()

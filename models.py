@@ -57,6 +57,17 @@ location_shape = {
     '1111' : 'Location shape extension'
 }
 
+velocity_type = {
+    '000' : 'No velocity information',
+    '001' : 'Horizontal velocity',
+    '010' : 'Horizontal velocity with uncertainty',
+    '011' : 'Horizontal velocity and vertical velocity',
+    '100' : 'Horizontal velocity and vertical velocity with uncertainty',
+    '101' : 'Horizontal velocity with direction of travel extended',
+    '110' : 'Horizontal velocity with direction of travel extended and uncertainty',
+    '111' : 'Horizontal velocity and vertical velocity with direction of travel extended and uncertainty'
+}
+
 pdu_data = {
     'pdu_type' : {
         'type' : '',
@@ -116,7 +127,22 @@ location_data = {
         'bits' : ''
     },
     'altitude' : {
-        'bits' : ''
+        'bits' : '',
+        'type' : {
+            'bits' : '',
+            'type' : ''
+        },
+        'meters' : ''
     }
 
+}
+
+velocity_data = {
+    'bits' : '',
+    'horizontal' : {
+        'bits' : '',
+    },
+    'vertical' : {
+        'bits' : '',
+    }
 }

@@ -2,11 +2,11 @@
 
 # tetra-sds
 Tetra Advanced Radio Digital Information System
+
 *T.A.R.D.I.S*
 (I wanted it to spell TARDIS OK.)
 
-Decodes Tetra Terrestrial Trunked Radio Time and Location Data
-*Time and Space...*
+Decodes Tetra Terrestrial Trunked Radio Time and Location Data in *Time and Space...*
 
 Based on the ETSI Standard:
 https://www.etsi.org/deliver/etsi_ts/100300_100399/1003921801/01.03.01_60/ts_1003921801v010301p.pdf
@@ -20,9 +20,9 @@ Input the SDS data as a hex string, outputs a dictionary with location and time 
 
 Once completed it should be as simple as:
 
-`import tetra-sds`
-`data = tetra-sds.decode(hex_string)`
-`print(data)`
+`import tetra-sds
+data = tetra-sds.decode(hex_string)
+print(data)`
 
 See the models.py for dictionary layouts.
 
