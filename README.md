@@ -22,11 +22,19 @@ Once completed it will be as simple as:
 
 ```python
 import tetra-sds
+
 data = tetra-sds.decode(hex_string)
 print(data)
 ```
 
-See the models.py for dictionary layouts.
+Then get values in the returned dictionary, see models.py for layouts.
+
+```python
+latitude = data['latitude']['decimal_degrees']
+longitude = data['longitude']['decimal_degrees']
+
+# ...etc.
+```
 
 
 ### Design
