@@ -18,11 +18,13 @@ Tetra is a digital two-way radio standard, used not only for voice but for Short
 
 Input the SDS data as a hex string, outputs a dictionary with location and time information. String can be from a database binary blob, from a text file, csv or directly from a Tetra Air Interface API.
 
-Once completed it should be as simple as:
+Once completed it will be as simple as:
 
-`import tetra-sds
+```python
+import tetra-sds
 data = tetra-sds.decode(hex_string)
-print(data)`
+print(data)
+```
 
 See the models.py for dictionary layouts.
 
