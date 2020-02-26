@@ -23,7 +23,7 @@ Once completed it will be as simple as:
 ```python
 import tetra-sds
 
-data = tetra-sds.decode(hex_string)
+data = tetra-sds.decode.sds(hex_string)
 print(data)
 ```
 

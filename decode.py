@@ -1,5 +1,6 @@
 from models import master, pdu_type, pdu_type_extension, time_type, pdu_data, time_data, location_shape, \
-    location_data, velocity_data, velocity_type
+    location_data, velocity_data, velocity_type, direction_data, acknowledgement_request, acknowledgement_data, \
+    reason_for_sending, reason_data, additional_data_type, additional_data
 from env.example import env
 
 import time
@@ -117,7 +118,7 @@ def get_horizontal_accuracy(bits):
     value = (2 * ((1 + 0.2) ** (value+5))) + -4
     value = round(value)
 
-    location_data['uncertainty'] = value
+    location_data['uncertainty']['meters'] = value
 
 
 def get_altitude(bits):
@@ -167,24 +168,38 @@ def get_location_data(bits):
 
     return(location_data)
 
-def get_horizontal_velocity(bits):
+
+def get_velocity(bits):
     ''' Calculates horizontal velocity from binary string
     '''
+
+    velocity_data['velocity']['bits'] = bits
+
+    horizontal = int(bits, 2)
+
+    if 29 <= horizontal <= 126:
+        # Simplified equation as per standard
+        horizontal = 16 * (1.038 ** (horizontal - 13))
+        horizontal = round(horizontal)
+
+    velocity_data['velocity']['kmh'] = horizontal
     
+    return(velocity_data)
 
 
-
-def get_velocity_data(bits):
-    '''Converts velocity data string to actual velocity information
+def get_angle(bits):
+    ''' Connverts bit string to angle (direction of travel)
     '''
 
+    direction_data['bits'] = bits
 
+    angle = int(bits, 2)
+    # value * (360/256)
+    angle = angle * 1.40625
 
-    horizontal = int(bits[0:8], 2)
-    vertical = int(bits[8:16], 2)
+    direction_data['angle'] = angle
 
-    # v = C × (1 + x)^(K-A) + B
-    horizontal = 16 * ((1 + 0.038) ** (horizontal - 13)) + 0
+    return(direction_data)
 
 
 
@@ -243,10 +258,26 @@ def sds(hex_string):
     velocity_data['type']['bits'] = binary_string[101:104]
     velocity_data['type']['type'] = velocity_type[binary_string[101:104]]
 
-    if velocity_data['type']['type'] = 'Horizontal velocity and vertical velocity':
-        master['velocity'] = get_velocity_data(binary_string[104:119])
+    if velocity_data['type']['type'] == 'Horizontal velocity with direction of travel extended':
+        master['velocity'] = get_velocity(binary_string[104:111])
+        master['direction'] = get_angle(binary_string[111:119])
 
+    # Acknowledgement
+    acknowledgement_data['bits'] = binary_string[119:120]
+    ack = str(int(binary_string[119:120], 2))
+    acknowledgement_data['acknowledgement'] = acknowledgement_request[binary_string[119:120]]
+    master['acknowledgement'] = acknowledgement_data
 
+    # Additional data type
+    additional_data['bits'] = binary_string[120:121]
+    additional_data['type'] = additional_data_type[binary_string[120:121]]
+    master['additional'] = additional_data
+
+    # Reason
+    reason_data['bits'] = binary_string[121:129]
+    reason = str(int(binary_string[121:129], 2))
+    reason_data['reason'] = reason_for_sending[reason]
+    master['reason'] = reason_data
 
     
 
@@ -262,7 +293,6 @@ if __name__ == '__main__':
             print(f'Decoding {hex_string}')
             sds(hex_string)
 
-
-        print(master)
+            print(master)
 
     f.close()

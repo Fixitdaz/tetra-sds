@@ -2,7 +2,12 @@ master = {
     'hex' : '',
     'binary' : '',
     'location' : {},
-    'time' : {}
+    'time' : {},
+    'velocity' : {},
+    'direction' : {},
+    'acknowledgement' : {},
+    'additional' : {},
+    'reason' : {}
 }
 
 pdu_type = {
@@ -66,6 +71,55 @@ velocity_type = {
     '101' : 'Horizontal velocity with direction of travel extended',
     '110' : 'Horizontal velocity with direction of travel extended and uncertainty',
     '111' : 'Horizontal velocity and vertical velocity with direction of travel extended and uncertainty'
+}
+
+acknowledgement_request = {
+    '0' : 'No acknowledgement requested',
+    '1' : 'Acknowledgement requested'
+}
+
+additional_data_type = {
+    '0' : 'Reason for sending',
+    '1' : 'User defined data'
+}
+
+reason_for_sending = {
+    '0' : 'Subscriber unit is powered ON',
+    '1' : 'Subscriber unit is powered OFF',
+    '2' : 'Emergency condition is detected',
+    '3' : 'Push-to-talk condition is detected',
+    '4' : 'Status',
+    '5' : 'Transmit inhibit mode ON',
+    '6' : 'Transmit inhibit mode OFF',
+    '7' : 'System access (TMO ON)',
+    '8' : 'DMO ON', 
+    '9' : 'Enter service (after being out of service)',
+    '10' : 'Service loss', 
+    '11' : 'Cell reselection or change of serving cell',
+    '12' : 'Low battery',
+    '13' : 'Subscriber unit is connected to a car kit',
+    '14' : 'Subscriber unit is disconnected from a car kit',
+    '15' : 'Subscriber unit asks for transfer initialization configuration',
+    '16' : 'Arrival at destination Destination',
+    '17' : 'Arrival at a defined location',
+    '18' : 'Approaching a defined location',
+    '19' : 'SDS type-1 entered',
+    '20' : 'User application initiated',
+    '21' : 'Lost ability to determine location',
+    '22' : 'Regained ability to determine location',
+    '23' : 'Leaving point',
+    '24' : 'Ambience Listening call is detected',
+    '25' : 'Start of temporary reporting',
+    '26' : 'Return to normal reporting',
+    '27' : 'Reserved',
+    '31' : 'Reserved',
+    '32' : 'Response to an immediate location request',
+    '33' : 'Reserved',
+    '128' : 'Reserved',
+    '129' : 'Maximum reporting interval exceeded since the last location information report',
+    '130' : 'Maximum reporting distance limit travelled since last location information report',
+    '131' : 'Reserved',
+    '255' : 'Reserved'
 }
 
 pdu_data = {
@@ -138,11 +192,32 @@ location_data = {
 }
 
 velocity_data = {
-    'bits' : '',
-    'horizontal' : {
+    'type' : {
         'bits' : '',
+        'type' : ''
     },
-    'vertical' : {
+    'velocity' : {
         'bits' : '',
+        'kmh' : ''
     }
+}
+
+direction_data = {
+    'bits' : '',
+    'angle' : ''
+}
+
+acknowledgement_data = {
+    'bits' : '',
+    'acknowledgement' : ''
+}
+
+additional_data = {
+    'bits' : '',
+    'type' : ''
+}
+
+reason_data = {
+    'bits' : '',
+    'reason' : ''
 }
