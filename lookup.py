@@ -1,15 +1,3 @@
-master = {
-    'hex' : '',
-    'binary' : '',
-    'location' : {},
-    'time' : {},
-    'velocity' : {},
-    'direction' : {},
-    'acknowledgement' : {},
-    'additional' : {},
-    'reason' : {}
-}
-
 pdu_type = {
     '00' : 'Short location report',
     '01' : 'Location protocol PDU with extension',
@@ -60,6 +48,11 @@ location_shape = {
     '1101' : 'Reserved',
     '1110' : 'Reserved',
     '1111' : 'Location shape extension'
+}
+
+altitude_type = {
+    '0' : 'Altitude above WGS84 ellipsoid',
+    '1' : 'User defined altitude reference'
 }
 
 velocity_type = {
@@ -120,104 +113,4 @@ reason_for_sending = {
     '130' : 'Maximum reporting distance limit travelled since last location information report',
     '131' : 'Reserved',
     '255' : 'Reserved'
-}
-
-pdu_data = {
-    'pdu_type' : {
-        'type' : '',
-        'bits' : ''
-    },
-    'pdu_type_extension' : {
-        'type' : '',
-        'bits' : ''
-    }
-}
-
-time_data = {
-    'type' : {
-        'bits' : '',
-        'type' : ''
-    },
-    'bits' : {
-        'day' : '',
-        'hour' : '',
-        'minute' : '',
-        'second' : ''       
-    },
-    'utc' : {
-        'epoc' : '',
-        'full' : '',
-        'year' : '',
-        'month' : '',
-        'day' : '',
-        'hour' : '',
-        'minute' : '',
-        'second' : ''
-    },
-    'local' : {
-        'epoc' : '',
-        'full' : '',
-        'year' : '',
-        'month' : '',
-        'day' : '',
-        'hour' : '',
-        'minute' : '',
-        'second' : ''       
-    }
-}
-
-location_data = {
-    'shape' : {
-        'bits' : '',
-        'type' : ''
-    },
-    'longitude' : {
-        'bits' : ''
-    },
-    'latitude' : {
-        'bits' : ''
-    },
-    'uncertainty' : {
-        'bits' : ''
-    },
-    'altitude' : {
-        'bits' : '',
-        'type' : {
-            'bits' : '',
-            'type' : ''
-        },
-        'meters' : ''
-    }
-
-}
-
-velocity_data = {
-    'type' : {
-        'bits' : '',
-        'type' : ''
-    },
-    'velocity' : {
-        'bits' : '',
-        'kmh' : ''
-    }
-}
-
-direction_data = {
-    'bits' : '',
-    'angle' : ''
-}
-
-acknowledgement_data = {
-    'bits' : '',
-    'acknowledgement' : ''
-}
-
-additional_data = {
-    'bits' : '',
-    'type' : ''
-}
-
-reason_data = {
-    'bits' : '',
-    'reason' : ''
 }

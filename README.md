@@ -16,29 +16,50 @@ Tetra is a digital two-way radio standard, used not only for voice but for Short
 
 ### Usage
 
-Input the SDS data as a hex string, outputs a dictionary with location and time information. String can be from a database binary blob, from a text file, csv or directly from a Tetra Air Interface API.
-
-Once completed it will be as simple as:
+Input the SDS data as a hex string, outputs a dictionary with location, velocity, direction and time information. String can be from a database binary blob, from a text file, csv or directly from a Tetra Air Interface API.
 
 ```python
-import tetra-sds
+import tetra-sds.decode as decode
 
-data = tetra-sds.decode.sds(hex_string)
+data = decode.sds(hex_string)
 print(data)
 ```
 
-Then get values in the returned dictionary, see models.py for layouts.
+Then get values in the returned dictionary, print it to get layout.
 
 ```python
-latitude = data['latitude']['decimal_degrees']
-longitude = data['longitude']['decimal_degrees']
+latitude = data['location']['latitude']['decimal_degrees']
+longitude = data['location']['longitude']['decimal_degrees']
+speed = data['velocity']['kmh']
 
 # ...etc.
 ```
 
+If batching in a for loop, remember to do deep copies of the dictionary:
+
+```python
+import tetra-sds.decode as decode
+import copy
+
+locations = []
+hex_strings = [list_of_hex_strings]
+
+for hex_string in hex_strings:
+    location = decode.sds(hex_string)
+    locations.append(copy.deepcopy(location))
+
+```
+
+Do what you wish with this data, such as create a list of lat,lon tuples or converting into a geojson.
+
+```python
+
+path = [ (pos['location']['latitude']['decimal_degrees'], pos['location']['longitude']['decimal_degrees']) for pos in locations ]
+
+```
 
 ### Design
 
-Design will probably change over time, however I'm basing everything around dictionaries rather than classes. Generally I am aiming to make the script run as quick as possible for batching large data sets and real-time processing. Looking up values in a key-value pair is faster than a bunch of 'if' statements inside a class.
+The various data types are matched in the "lookup.py" file.
 
-Data types are looked up in the associated dictionary. Processed data is stored in dictionaries. Those dictionaries are then combined into the "master" dictionary.
+Processed data is stored in dictionaries. Those dictionaries are then combined into the "master" dictionary.
