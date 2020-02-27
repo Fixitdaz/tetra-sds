@@ -1,5 +1,3 @@
-*Work in progress*
-
 # tetra-sds
 Tetra Advanced Radio Digital Information System
 
