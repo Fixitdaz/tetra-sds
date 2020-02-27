@@ -48,6 +48,12 @@ for hex_string in hex_strings:
 
 ```
 
+Also may be of benifit to sort by epoc (ascending)
+
+```python
+locations = sorted(locations, reverse=False, key=lambda k: k['time']['epoc']) 
+```
+
 Do what you wish with this data, such as create a list of lat,lon tuples or converting into a geojson.
 
 ```python

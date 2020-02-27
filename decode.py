@@ -211,37 +211,37 @@ def get_direction(bits):
     angle = angle * 1.40625
     direction['angle'] = angle
     
-    if angle >= 349 and angle <= 11:
+    if 11 >= angle >= 349:
         direction['direction'] = 'N'
-    elif angle >= 12 and angle <= 33:
+    elif 33 >= angle >= 12:
         direction['direction'] = 'NNE'
-    elif angle >= 34 and angle <= 56:
+    elif 56 >= angle >= 34:
         direction['direction'] = 'NE'
-    elif angle >= 57 and angle <= 78:
+    elif 78 >= angle >= 57:
         direction['direction'] = 'ENE'
-    elif angle >= 79 and angle <= 101:
+    elif 101 >= angle >= 79:
         direction['direction'] = 'E'
-    elif angle >= 102 and angle <= 123:
+    elif 123 >= angle >= 102:
         direction['direction'] = 'ESE'
-    elif angle >= 124 and angle <= 146:
+    elif 146 >= angle >= 124:
         direction['direction'] = 'SE'
-    elif angle >= 147 and angle <= 168:
+    elif 168 >= angle >= 147:
         direction['direction'] = 'SSE'
-    elif angle >= 169 and angle <= 191:
+    elif 191 >= angle >= 169:
         direction['direction'] = 'S'
-    elif angle >= 192 and angle <= 213:
+    elif 213 >= angle >= 192:
         direction['direction'] = 'SSW'
-    elif angle >= 214 and angle <= 236:
+    elif 236 >= angle >= 214:
         direction['direction'] = 'SW'
-    elif angle >= 237 and angle <= 258:
+    elif 258 >= angle >= 237:
         direction['direction'] = 'WSW'
-    elif angle >= 259 and angle <= 281:
+    elif 281 >= angle >= 259:
         direction['direction'] = 'W'
-    elif angle >= 282 and angle <= 303:
+    elif 303 >= angle >= 282:
         direction['direction'] = 'WNW'        
-    elif angle >= 304 and angle <= 326:
+    elif 326 >= angle >= 304:
         direction['direction'] = 'NW'
-    elif angle >= 327 and angle <= 348:
+    elif 348 >= angle >= 327:
         direction['direction'] = 'NNW'    
 
     return(direction)
@@ -266,6 +266,7 @@ def sds(hex_string):
 
     # Convert hex to binary (add a 0 to the start)
     binary_string = '0'+"{0:08b}".format(int(hex_string, 16))
+    print(binary_string)
 
     # Look up PDU type in pdu_type dictionary
     # Bits 1-2 (2 bits)
@@ -276,33 +277,62 @@ def sds(hex_string):
     # Bits 3-6 (4 bits)
     if master['pdu_type'] == 'Location protocol PDU with extension':
         master['pdu_type_extension'] = pdu_type_extension[binary_string[2:6]]
+        
+        # If PDU Extension Type == "Long location report"
+        # Look up time type in time_type dictionary
+        # Bits 7-8 (2 bits)
+        if master['pdu_type_extension'] == 'Long location report':
+            master['time']['type'] = time_type[binary_string[6:8]]
+
+            if master['time']['type'] == 'Time of position':
+                master['time'] = get_time_data(binary_string[6:30])
+                # Process location data
+                master['location'] = get_location_data(binary_string[30:101])
+
+                # Process velocity and directional data
+                master['velocity'], master['direction'] = get_velocity(binary_string[101:119])
+
+                # Lookup acknowledgement type
+                master['acknowledgement'] = acknowledgement_request[binary_string[119:120]]
+
+                # Lookup additional data type
+                master['additional'] = additional_data_type[binary_string[120:121]]
+
+                # Lookup reason
+                if master['additional'] == 'Reason for sending':
+                    reason = str(int(binary_string[121:129], 2))
+                    master['reason'] = reason_for_sending[reason]
+
+            elif master['time']['type'] == 'None':
+
+                master['location']['shape'] = location_shape[binary_string[8:12]]
+
+                if master['location']['shape'] == 'No shape':
+
+                    master['velocity']['type'] = velocity_type[binary_string[12:15]]
+
+                    if master['velocity']['type'] == 'No velocity information':
+
+
+                        # Lookup acknowledgement type
+                        master['acknowledgement'] = acknowledgement_request[binary_string[15:16]]
+
+                        # Lookup additional data type
+                        master['additional'] = additional_data_type[binary_string[16:17]]
+
+                        # Lookup reason
+                        if master['additional'] == 'Reason for sending':
+                            reason = str(int(binary_string[17:25], 2))
+                            master['reason'] = reason_for_sending[reason]
+
+
+        else:
+            raise ValueError("Only 'Long location report' (0011) is currently supported.")
+
+
     else:
         raise ValueError("Only 'Location protocol PDU with extension' (01) is currently supported.")
 
-    # If PDU Extension Type == "Long location report"
-    # Look up time type in time_type dictionary
-    # Bits 7-8 (2 bits)
-    if master['pdu_type_extension'] == 'Long location report':
-        master['time'] = get_time_data(binary_string[6:30])
-    else:
-        raise ValueError("Only 'Long location report' (0011) is currently supported.")
-
-    # Process location data
-    master['location'] = get_location_data(binary_string[30:101])
-
-    # Process velocity and directional data
-    master['velocity'], master['direction'] = get_velocity(binary_string[101:119])
-
-    # Lookup acknowledgement type
-    master['acknowledgement'] = acknowledgement_request[binary_string[119:120]]
-
-    # Lookup additional data type
-    master['additional'] = additional_data_type[binary_string[120:121]]
-
-    # Lookup reason
-    if master['additional'] == 'Reason for sending':
-        reason = str(int(binary_string[121:129], 2))
-        master['reason'] = reason_for_sending[reason]
 
     return(master)
 
