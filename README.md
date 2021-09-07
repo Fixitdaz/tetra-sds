@@ -13,8 +13,7 @@ https://www.etsi.org/deliver/etsi_ts/100300_100399/1003921801/01.03.01_60/ts_100
 Tetra is a digital two-way radio standard, used not only for voice but for Short Data Services (SDS) as well. This project is a python implementation for decoding said data. 
 
 ### Usage
-
-Input the SDS data as a hex string, outputs a dictionary with location, velocity, direction and time information. String can be from a database binary blob, from a text file, csv or directly from a Tetra Air Interface API.
+Input the SDS data as a hex string or raw binary, outputs a dictionary with location, velocity, direction and time information. Data can be from a database binary blob, a text file, csv or directly from a Tetra Air Interface API.
 
 ```python
 import tetra-sds.decode as decode
@@ -33,22 +32,7 @@ speed = data['velocity']['kmh']
 # ...etc.
 ```
 
-If batching in a for loop, remember to do deep copies of the dictionary:
-
-```python
-import tetra-sds.decode as decode
-import copy
-
-locations = []
-hex_strings = [list_of_hex_strings]
-
-for hex_string in hex_strings:
-    location = decode.sds(hex_string)
-    locations.append(copy.deepcopy(location))
-
-```
-
-Also may be of benifit to sort by epoc (ascending)
+It also may be of benifit to sort by epoc (ascending)
 
 ```python
 locations = sorted(locations, reverse=False, key=lambda k: k['time']['epoc']) 

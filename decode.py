@@ -1,63 +1,133 @@
-
-from lookup import pdu_type, pdu_type_extension, time_type, location_shape, altitude_type, velocity_type, acknowledgement_request, \
-    additional_data_type, reason_for_sending
-
-import time
-from datetime import datetime
+import lookup
 import copy
 
 
 
-def get_time_data(bits):
-    '''Takes binary string, returns time information dictionary
+'''
+Module to decode a raw binary string in to GPS position details
+'''
+
+
+
+def lookup_binary(
+        binary: str
+    ) -> dict:
+    '''
+    Splits the binary string in to separte parts
+    Looks up the value with the lookup dictionaries
+    Returns the values in a dictionary
     '''
 
-    # Reset to blank
-    time_data = {
-        'type' : '',
-        'epoc' : '',
-        'full': ''
+    binary_dict = {
+        'pdu_type' : {},
+        'time' : {},
+        'location' : {
+            'shape' : {}
+        },
+        'velocity' : {
+            'type' : {}
+        }
     }
 
+    # Look up PDU type in the pdu_type dictionary
+    # Bits 1-2 (2 bits)
+    binary_dict['pdu_type'] = lookup.pdu_type[binary[0:2]]
+
+    # If PDU Type == "Location protocol PDU with extension"
+    # Look up PDU type extension in pdu_type_extension dictionary
+    # Bits 3-6 (4 bits)
+    if binary_dict['pdu_type'] == 'Location protocol PDU with extension':
+        binary_dict['pdu_type_extension'] = lookup.pdu_type_extension[binary[2:6]]
+    
+    # If PDU Extension Type == "Long location report"
+    if binary_dict['pdu_type_extension'] == 'Long location report':
+        # Look up time type in time_type dictionary
+        # Bits 7-8 (2 bits)
+        binary_dict['time']['type'] = lookup.time_type[binary[6:8]]
+        # Lookup acknowledgement type
+        try:
+            binary_dict['acknowledgement'] = lookup.acknowledgement_request[binary[119:120]]
+        except:
+            binary_dict['acknowledgement'] = None
+        try:
+            # Lookup additional data type
+            binary_dict['additional'] = lookup.additional_data_type[binary[120:121]]
+        except:
+            binary_dict['additional'] = None
+    
+    # Lookup reason for sending
+    if binary_dict['additional'] == 'Reason for sending':
+        # Convert to integer then back to string
+        reason = str(int(binary[121:129], 2))
+        binary_dict['reason'] = lookup.reason_for_sending[reason]
+
+    # If the time type is none
+    if binary_dict['time']['type'] == 'None':
+        # Look up the location shape
+        binary_dict['location']['shape'] = lookup.location_shape[binary[8:12]]
+
+    # If there is no location shape
+    if binary_dict['location']['shape'] == 'No shape':
+        binary_dict['velocity']['type'] = lookup.velocity_type[binary[12:15]]
+
+    # If there is no velocity information
+    if binary_dict['velocity']['type'] == 'No velocity information':
+        # Lookup acknowledgement type
+        binary_dict['acknowledgement'] = lookup.acknowledgement_request[binary[15:16]]
+        # Lookup additional data type
+        binary_dict['additional'] = lookup.additional_data_type[binary[16:17]]
+        # Lookup reason
+
+    # If additional information is 'Reason for Sending'
+    if binary_dict['additional'] == 'Reason for sending':
+        # Lookup reason
+        # Convert to integer then back to string
+        reason = str(int(binary[17:25], 2))
+    
+    return(binary_dict)
+
+
+def get_time_data(
+        bits: str
+    ) -> dict:
+    '''
+    Takes binary string, returns time information dictionary
+    '''
+    # Reset to blank
+    time_data = {}
+
     # Lookup time type
-    time_data['type'] = time_type[bits[0:2]]
+    time_data['type'] = lookup.time_type[bits[0:2]]
 
-    if time_data['type'] != "Time of position":
-        raise ValueError("Only 'Time of position' (10) is currently supported.")
-
-    # Create full datetime object
-    # Year, Month, Day, Hour, Minute, Second
-    datetime_utc = datetime(
-        int(datetime.utcnow().strftime('%Y')),
-        int(datetime.utcnow().strftime('%m')),
-        int(bits[2:7], 2),
-        int(bits[7:12], 2),
-        int(bits[12:18], 2),
-        int(bits[18:24], 2)
-    )
-
-    # Save UTC to dictionary
-    time_data['full'] = datetime_utc.strftime("%d/%m/%Y %H:%M:%S")
-    # UTC epoc
-    time_data['epoc'] = datetime_utc.timestamp()
+    # No Year or Month data in the GPS time stamp
+    # Therefor unable to create a datetime object
+    time_data['day'] = int(bits[2:7], 2)
+    time_data['hour'] = int(bits[7:12], 2)
+    time_data['minute'] = int(bits[12:18], 2)
+    time_data['seconds'] = int(bits[18:24], 2)
 
     return(time_data)
 
 
 def twos_comp(bits):
-    """compute the 2's complement of int value val
+    '''
+    Compute the 2's complement of int value val
     Stolen from a stack overflow like everything else
-    """
+    '''
     val = int(bits,2)
     bits = len(bits)
 
     if (val & (1 << (bits - 1))) != 0: # if sign bit is set e.g., 8bit: 128-255
         val = val - (1 << bits)        # compute negative value
+
     return(val)   
 
 
-def get_longitude(bits):
-    ''' Converts bit string to longitude in decimal degrees
+def get_longitude(
+        bits: str
+    ) -> dict:
+    '''
+    Converts bit string to longitude in decimal degrees
     '''
 
     longitude = {
@@ -75,8 +145,11 @@ def get_longitude(bits):
     return(longitude)
 
 
-def get_latitude(bits):
-    ''' Converts bit string to latitude in decimal degrees
+def get_latitude(
+        bits: str
+    ) -> dict:
+    '''
+    Converts bit string to latitude in decimal degrees
     '''
 
     latitude = {
@@ -94,7 +167,9 @@ def get_latitude(bits):
     return(latitude)
 
 
-def get_uncertainty(bits):
+def get_uncertainty(
+        bits: str
+    ) -> int:
     ''' Converts horizontal position accuracy bits (6) to actual value in meters
     '''
 
@@ -108,8 +183,11 @@ def get_uncertainty(bits):
     return(uncertainty)
 
 
-def get_altitude(bits):
-    ''' Converts altitude bits (12) to actual value in meters
+def get_altitude(
+        bits: str
+    ) -> dict:
+    '''
+    Converts altitude bits (12) to actual value in meters
     This is the GPS reported altitude typically above WGS84 ellipsoid
     '''
 
@@ -118,7 +196,7 @@ def get_altitude(bits):
         'meters' : ''
     }
 
-    altitude['type'] = altitude_type[bits[0]]
+    altitude['type'] = lookup.altitude_type[bits[0]]
 
     # Convert remaining 11 bits to integer
     value = int(bits[1:], 2)
@@ -141,35 +219,11 @@ def get_altitude(bits):
     return(altitude)
 
 
-def get_location_data(bits):
-    ''' Takes location data binary string and returns location data dictionary
+def get_velocity(
+        bits: str
+    ) -> dict:
     '''
-
-    location_data = {
-        'shape' : '',
-        'longitude' : {},
-        'latitude' : {},
-        'uncertainty' : '',
-        'altitude' : {}
-    }
-
-    # Lookup Shape
-    location_data['shape'] = location_shape[bits[0:4]]
-    
-    # Process location data
-    if location_data['shape'] != 'circle with altitude':
-        raise ValueError("Only 'circle with altitude' (0101) is currently supported")
-
-    location_data['longitude'] = get_longitude(bits[4:29])
-    location_data['latitude'] = get_latitude(bits[29:53])
-    location_data['uncertainty'] = get_uncertainty(bits[53:59])
-    location_data['altitude'] = get_altitude(bits[59:71])
-
-    return(location_data)
-
-
-def get_velocity(bits):
-    ''' Calculates horizontal velocity and direction from binary string
+    Calculates horizontal velocity and direction from binary string
     '''
 
     velocity = {
@@ -178,27 +232,29 @@ def get_velocity(bits):
     }
     
     # Lookup velocity type
-    velocity['type'] = velocity_type[bits[0:3]]
+    velocity['type'] = lookup.velocity_type[bits[0:3]]
 
-    if velocity['type'] != 'Horizontal velocity with direction of travel extended':
-        raise ValueError("Only 'Horizontal velocity with direction of travel extended' (101) is currently supported")
+    if velocity['type'] == 'Horizontal velocity with direction of travel extended':
 
-    vel = int(bits[3:10], 2)
+        vel = int(bits[3:10], 2)
 
-    if 29 <= vel <= 126:
-        # Simplified equation as per standard
-        vel = 16 * (1.038 ** (vel - 13))
-        vel = round(vel)
+        if 29 <= vel <= 126:
+            # Simplified equation as per standard
+            vel = 16 * (1.038 ** (vel - 13))
+            vel = round(vel)
 
-    velocity['kmh'] = vel
+        velocity['kmh'] = vel
 
-    direction = get_direction(bits[10:18])
+        direction = get_direction(bits[10:18])
 
-    return(velocity, direction)
+        return(velocity, direction)
 
 
-def get_direction(bits):
-    ''' Connverts bit string to angle (direction of travel)
+def get_direction(
+        bits: str
+    ) -> dict:
+    ''' 
+    Connverts bit string to angle (direction of travel)
     '''
 
     direction = {
@@ -247,8 +303,11 @@ def get_direction(bits):
     return(direction)
 
 
-def sds(hex_string):
-    ''' "Main" function, takes a hex string, returns a dictionary with location information.
+def sds(
+        data: bytes
+    ) -> dict:
+    ''' 
+    "Main" function, takes raw bytearray, returns a dictionary with location information.
     '''
 
     # Reset dictionary
@@ -264,75 +323,39 @@ def sds(hex_string):
         'reason' : ''
     }
 
+    if type(data) == bytearray:
+        data = data.hex()
+
     # Convert hex to binary (add a 0 to the start)
-    binary_string = '0'+"{0:08b}".format(int(hex_string, 16))
-    print(binary_string)
+    bits = '0'+"{0:08b}".format(int(data, 16))
 
-    # Look up PDU type in pdu_type dictionary
-    # Bits 1-2 (2 bits)
-    master['pdu_type'] = pdu_type[binary_string[0:2]]
+    # Split the binary string and lookup the values
+    data_types = lookup_binary(bits)
 
-    # If PDU Type == "Location protocol PDU with extension"
-    # Look up PDU type extension in pdu_type_extension dictionary
-    # Bits 3-6 (4 bits)
-    if master['pdu_type'] == 'Location protocol PDU with extension':
-        master['pdu_type_extension'] = pdu_type_extension[binary_string[2:6]]
+    # If the time type is 'Time of position'
+    if data_types['time']['type'] == 'Time of position':
+        ####################################
+        # Decode the time data (bits 7-30) #
+        ####################################
+        master['time'] = get_time_data(bits[6:30])
+
+        #######################################
+        # Process location data (bits 31-101) #
+        #######################################
+        # Lookup Shape (bits 31-34)
+        master['location']['shape'] = lookup.location_shape[bits[30:34]]
         
-        # If PDU Extension Type == "Long location report"
-        # Look up time type in time_type dictionary
-        # Bits 7-8 (2 bits)
-        if master['pdu_type_extension'] == 'Long location report':
-            master['time']['type'] = time_type[binary_string[6:8]]
-
-            if master['time']['type'] == 'Time of position':
-                master['time'] = get_time_data(binary_string[6:30])
-                # Process location data
-                master['location'] = get_location_data(binary_string[30:101])
-
-                # Process velocity and directional data
-                master['velocity'], master['direction'] = get_velocity(binary_string[101:119])
-
-                # Lookup acknowledgement type
-                master['acknowledgement'] = acknowledgement_request[binary_string[119:120]]
-
-                # Lookup additional data type
-                master['additional'] = additional_data_type[binary_string[120:121]]
-
-                # Lookup reason
-                if master['additional'] == 'Reason for sending':
-                    reason = str(int(binary_string[121:129], 2))
-                    master['reason'] = reason_for_sending[reason]
-
-            elif master['time']['type'] == 'None':
-
-                master['location']['shape'] = location_shape[binary_string[8:12]]
-
-                if master['location']['shape'] == 'No shape':
-
-                    master['velocity']['type'] = velocity_type[binary_string[12:15]]
-
-                    if master['velocity']['type'] == 'No velocity information':
-
-
-                        # Lookup acknowledgement type
-                        master['acknowledgement'] = acknowledgement_request[binary_string[15:16]]
-
-                        # Lookup additional data type
-                        master['additional'] = additional_data_type[binary_string[16:17]]
-
-                        # Lookup reason
-                        if master['additional'] == 'Reason for sending':
-                            reason = str(int(binary_string[17:25], 2))
-                            master['reason'] = reason_for_sending[reason]
-
-
-        else:
-            raise ValueError("Only 'Long location report' (0011) is currently supported.")
-
-
-    else:
-        raise ValueError("Only 'Location protocol PDU with extension' (01) is currently supported.")
-
+        # Decode the location data binary
+        if master['location']['shape'] == 'circle with altitude':
+            master['location']['longitude'] = get_longitude(bits[34:59])
+            master['location']['latitude'] = get_latitude(bits[59:83])
+            master['location']['uncertainty'] = get_uncertainty(bits[83:89])
+            master['location']['altitude'] = get_altitude(bits[89:101])
+        
+        #########################################
+        # Process velocity and directional data #
+        #########################################
+        master['velocity'], master['direction'] = get_velocity(bits[101:119])
 
     return(master)
 
