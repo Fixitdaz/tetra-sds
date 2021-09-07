@@ -22,7 +22,7 @@ data = decode.sds(hex_string)
 print(data)
 ```
 
-Then get values in the returned dictionary, print it to get layout.
+Then get the values from the returned dictionary, print it to get the layout.
 
 ```python
 latitude = data['location']['latitude']['decimal_degrees']
@@ -38,7 +38,7 @@ It also may be of benifit to sort by epoc (ascending)
 locations = sorted(locations, reverse=False, key=lambda k: k['time']['epoc']) 
 ```
 
-Do what you wish with this data, such as create a list of lat,lon tuples or converting into a geojson.
+Do what you wish with this data, such as create a list of lat,lon tuples or convert it into a geojson.
 
 ```python
 
